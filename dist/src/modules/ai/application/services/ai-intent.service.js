@@ -8,6 +8,9 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AIIntentService = void 0;
 const common_1 = require("@nestjs/common");
@@ -21,13 +24,16 @@ const extend_reservation_command_1 = require("../../../reservation/application/c
 const extend_reservation_handler_1 = require("../../../reservation/application/commands/extend-reservation.handler");
 const ai_command_entity_1 = require("../../domain/entities/ai-command.entity");
 const llm_service_1 = require("../../infrastructure/llm/llm.service");
+const ai_tokens_1 = require("../../ai.tokens");
 let AIIntentService = class AIIntentService {
+    knowledgeRepository;
     llmService;
     createReservationHandler;
     confirmReservationHandler;
     cancelReservationHandler;
     extendReservationHandler;
-    constructor(llmService, createReservationHandler, confirmReservationHandler, cancelReservationHandler, extendReservationHandler) {
+    constructor(knowledgeRepository, llmService, createReservationHandler, confirmReservationHandler, cancelReservationHandler, extendReservationHandler) {
+        this.knowledgeRepository = knowledgeRepository;
         this.llmService = llmService;
         this.createReservationHandler = createReservationHandler;
         this.confirmReservationHandler = confirmReservationHandler;
@@ -44,7 +50,8 @@ let AIIntentService = class AIIntentService {
             throw new Error("Input text is required.");
         }
         try {
-            const llmOutput = await this.llmService.inferIntent(normalized);
+            const context = await this.knowledgeRepository.retrieveRelevantContext(normalized);
+            const llmOutput = await this.llmService.inferIntent(normalized, context);
             return this.mapLLMOutputToAICommand(llmOutput, normalized);
         }
         catch {
@@ -200,7 +207,8 @@ let AIIntentService = class AIIntentService {
 exports.AIIntentService = AIIntentService;
 exports.AIIntentService = AIIntentService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [llm_service_1.LLMService,
+    __param(0, (0, common_1.Inject)(ai_tokens_1.AI_KNOWLEDGE_REPOSITORY)),
+    __metadata("design:paramtypes", [Object, llm_service_1.LLMService,
         create_reservation_handler_1.CreateReservationHandler,
         confirm_reservation_handler_1.ConfirmReservationHandler,
         cancel_reservation_handler_1.CancelReservationHandler,

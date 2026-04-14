@@ -3,18 +3,20 @@ import { ConfirmReservationHandler } from "../../../reservation/application/comm
 import { CreateReservationHandler } from "../../../reservation/application/commands/create-reservation.handler";
 import { ExtendReservationHandler } from "../../../reservation/application/commands/extend-reservation.handler";
 import { LLMService } from "../../infrastructure/llm/llm.service";
+import type { KnowledgeRepository } from "../../infrastructure/rag/knowledge-repository.interface";
 type AICommandExecutionResult = {
     intent: string;
     confidence: number;
     result: unknown;
 };
 export declare class AIIntentService {
+    private readonly knowledgeRepository;
     private readonly llmService;
     private readonly createReservationHandler;
     private readonly confirmReservationHandler;
     private readonly cancelReservationHandler;
     private readonly extendReservationHandler;
-    constructor(llmService: LLMService, createReservationHandler: CreateReservationHandler, confirmReservationHandler: ConfirmReservationHandler, cancelReservationHandler: CancelReservationHandler, extendReservationHandler: ExtendReservationHandler);
+    constructor(knowledgeRepository: KnowledgeRepository, llmService: LLMService, createReservationHandler: CreateReservationHandler, confirmReservationHandler: ConfirmReservationHandler, cancelReservationHandler: CancelReservationHandler, extendReservationHandler: ExtendReservationHandler);
     executeFromText(text: string): Promise<AICommandExecutionResult>;
     private resolveAICommand;
     private executeAICommand;

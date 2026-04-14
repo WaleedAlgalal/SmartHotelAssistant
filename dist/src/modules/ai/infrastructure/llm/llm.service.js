@@ -10,14 +10,14 @@ exports.LLMService = void 0;
 const common_1 = require("@nestjs/common");
 const ai_intent_system_prompt_1 = require("../../application/prompts/ai-intent.system-prompt");
 let LLMService = class LLMService {
-    async inferIntent(rawInput) {
+    async inferIntent(rawInput, context) {
         const provider = (process.env.AI_LLM_PROVIDER ?? "mock").toLowerCase();
         if (provider === "openai") {
-            return this.inferWithOpenAI(rawInput);
+            return this.inferWithOpenAI(rawInput, context);
         }
-        return this.inferWithMockProvider(rawInput);
+        return this.inferWithMockProvider(rawInput, context);
     }
-    async inferWithOpenAI(rawInput) {
+    async inferWithOpenAI(rawInput, context) {
         const apiKey = process.env.OPENAI_API_KEY;
         if (!apiKey) {
             throw new Error("OPENAI_API_KEY is missing.");
@@ -34,7 +34,7 @@ let LLMService = class LLMService {
                 temperature: 0,
                 messages: [
                     { role: "system", content: ai_intent_system_prompt_1.AI_INTENT_SYSTEM_PROMPT },
-                    { role: "user", content: rawInput },
+                    { role: "user", content: (0, ai_intent_system_prompt_1.buildAIIntentUserPrompt)(rawInput, context) },
                 ],
             }),
         });
@@ -50,7 +50,7 @@ let LLMService = class LLMService {
         const parsed = this.parseStrictJson(content);
         return this.validateOutput(parsed);
     }
-    inferWithMockProvider(rawInput) {
+    inferWithMockProvider(rawInput, context) {
         const text = rawInput.toLowerCase();
         if (text.includes("book")) {
             const now = new Date();
@@ -62,8 +62,12 @@ let LLMService = class LLMService {
                 intent: "CreateReservationCommand",
                 confidence: 0.86,
                 entities: {
-                    guestId: this.extractValue(rawInput, "guest") ?? "guest-default",
-                    roomId: this.extractValue(rawInput, "room") ?? "room-default",
+                    guestId: this.extractValue(rawInput, "guest") ??
+                        context.guests[0]?.id ??
+                        "guest-default",
+                    roomId: this.extractValue(rawInput, "room") ??
+                        context.rooms[0]?.id ??
+                        "room-default",
                     checkIn: checkIn.toISOString(),
                     checkOut: checkOut.toISOString(),
                 },
@@ -73,14 +77,22 @@ let LLMService = class LLMService {
             return {
                 intent: "ConfirmReservationCommand",
                 confidence: 0.9,
-                entities: { reservationId: this.extractReservationId(rawInput) },
+                entities: {
+                    reservationId: this.extractReservationId(rawInput) ??
+                        context.reservations[0]?.id ??
+                        undefined,
+                },
             };
         }
         if (text.includes("cancel")) {
             return {
                 intent: "CancelReservationCommand",
                 confidence: 0.9,
-                entities: { reservationId: this.extractReservationId(rawInput) },
+                entities: {
+                    reservationId: this.extractReservationId(rawInput) ??
+                        context.reservations[0]?.id ??
+                        undefined,
+                },
             };
         }
         if (text.includes("extend")) {
@@ -88,7 +100,9 @@ let LLMService = class LLMService {
                 intent: "ExtendReservationCommand",
                 confidence: 0.88,
                 entities: {
-                    reservationId: this.extractReservationId(rawInput),
+                    reservationId: this.extractReservationId(rawInput) ??
+                        context.reservations[0]?.id ??
+                        undefined,
                     checkOut: this.extractDate(rawInput),
                 },
             };
@@ -140,10 +154,7 @@ let LLMService = class LLMService {
     }
     extractReservationId(rawInput) {
         const match = rawInput.match(/(?:reservation(?:\s+id)?|id)\s*[:=]?\s*([a-zA-Z0-9_-]+)/i);
-        if (!match?.[1]) {
-            throw new Error("Reservation id could not be inferred.");
-        }
-        return match[1];
+        return match?.[1];
     }
     extractValue(rawInput, key) {
         const match = rawInput.match(new RegExp(`${key}\\s*(?:id)?\\s*[:=]?\\s*([a-zA-Z0-9_-]+)`, "i"));

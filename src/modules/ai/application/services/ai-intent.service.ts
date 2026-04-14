@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Inject, Injectable } from "@nestjs/common";
 import { CancelReservationCommand } from "../../../reservation/application/commands/cancel-reservation.command";
 import { CancelReservationHandler } from "../../../reservation/application/commands/cancel-reservation.handler";
 import { ConfirmReservationCommand } from "../../../reservation/application/commands/confirm-reservation.command";
@@ -10,6 +10,8 @@ import { ExtendReservationHandler } from "../../../reservation/application/comma
 import { AICommand } from "../../domain/entities/ai-command.entity";
 import { LLMService } from "../../infrastructure/llm/llm.service";
 import { LLMIntentOutput } from "../../infrastructure/llm/llm.types";
+import { AI_KNOWLEDGE_REPOSITORY } from "../../ai.tokens";
+import type { KnowledgeRepository } from "../../infrastructure/rag/knowledge-repository.interface";
 
 type AICommandExecutionResult = {
   intent: string;
@@ -20,6 +22,8 @@ type AICommandExecutionResult = {
 @Injectable()
 export class AIIntentService {
   constructor(
+    @Inject(AI_KNOWLEDGE_REPOSITORY)
+    private readonly knowledgeRepository: KnowledgeRepository,
     private readonly llmService: LLMService,
     private readonly createReservationHandler: CreateReservationHandler,
     private readonly confirmReservationHandler: ConfirmReservationHandler,
@@ -39,7 +43,9 @@ export class AIIntentService {
     }
 
     try {
-      const llmOutput = await this.llmService.inferIntent(normalized);
+      const context =
+        await this.knowledgeRepository.retrieveRelevantContext(normalized);
+      const llmOutput = await this.llmService.inferIntent(normalized, context);
       return this.mapLLMOutputToAICommand(llmOutput, normalized);
     } catch {
       // Safe mode: fallback to deterministic local rules.
