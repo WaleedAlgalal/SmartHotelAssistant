@@ -14,8 +14,9 @@ class SmartHotelApp extends StatelessWidget {
       title: "Smart Hotel Assistant",
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
-      initialRoute: LoginScreen.routeName,
+      initialRoute: "/",
       routes: {
+        "/": (_) => const LoginScreen(),
         LoginScreen.routeName: (_) => const LoginScreen(),
         RegisterScreen.routeName: (_) => const RegisterScreen(),
         ReservationListScreen.routeName: (_) => const ReservationListScreen(),
