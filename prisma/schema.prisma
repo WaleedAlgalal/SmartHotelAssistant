@@ -10,3 +10,36 @@ generator client {
 datasource db {
   provider = "sqlserver"
 }
+
+model Reservation {
+  id      String @id @default(uuid())
+  guestId String
+  roomId  String
+
+  checkIn  DateTime
+  checkOut DateTime
+  status   String   @default("CREATED")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  guest Guest @relation(fields: [guestId], references: [id])
+  room  Room  @relation(fields: [roomId], references: [id])
+}
+
+model Guest {
+  id    String  @id @default(uuid())
+  name  String
+  phone String?
+
+  reservations Reservation[]
+}
+
+model Room {
+  id     String @id @default(uuid())
+  number String
+  type   String
+  status String @default("AVAILABLE")
+
+  reservations Reservation[]
+}

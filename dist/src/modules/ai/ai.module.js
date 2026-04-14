@@ -6,20 +6,20 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.AppModule = void 0;
+exports.AiModule = void 0;
 const common_1 = require("@nestjs/common");
-const app_controller_1 = require("./app.controller");
-const app_service_1 = require("./app.service");
-const reservation_module_1 = require("./modules/reservation/reservation.module");
-const ai_module_1 = require("./modules/ai/ai.module");
-let AppModule = class AppModule {
+const reservation_module_1 = require("../reservation/reservation.module");
+const ai_intent_service_1 = require("./application/services/ai-intent.service");
+const llm_service_1 = require("./infrastructure/llm/llm.service");
+const ai_controller_1 = require("./presentation/controllers/ai.controller");
+let AiModule = class AiModule {
 };
-exports.AppModule = AppModule;
-exports.AppModule = AppModule = __decorate([
+exports.AiModule = AiModule;
+exports.AiModule = AiModule = __decorate([
     (0, common_1.Module)({
-        imports: [reservation_module_1.ReservationModule, ai_module_1.AiModule],
-        controllers: [app_controller_1.AppController],
-        providers: [app_service_1.AppService],
+        imports: [reservation_module_1.ReservationModule],
+        controllers: [ai_controller_1.AIController],
+        providers: [ai_intent_service_1.AIIntentService, llm_service_1.LLMService],
     })
-], AppModule);
-//# sourceMappingURL=app.module.js.map
+], AiModule);
+//# sourceMappingURL=ai.module.js.map

@@ -50,6 +50,12 @@ exports.ReservationModule = ReservationModule = __decorate([
                 inject: [reservation_tokens_1.RESERVATION_REPOSITORY],
             },
         ],
+        exports: [
+            create_reservation_handler_1.CreateReservationHandler,
+            confirm_reservation_handler_1.ConfirmReservationHandler,
+            cancel_reservation_handler_1.CancelReservationHandler,
+            extend_reservation_handler_1.ExtendReservationHandler,
+        ],
     })
 ], ReservationModule);
 //# sourceMappingURL=reservation.module.js.map

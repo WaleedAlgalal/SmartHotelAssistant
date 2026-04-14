@@ -48,5 +48,11 @@ import {
       inject: [RESERVATION_REPOSITORY],
     },
   ],
+  exports: [
+    CreateReservationHandler,
+    ConfirmReservationHandler,
+    CancelReservationHandler,
+    ExtendReservationHandler,
+  ],
 })
 export class ReservationModule {}
