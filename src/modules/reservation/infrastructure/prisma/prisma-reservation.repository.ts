@@ -10,13 +10,24 @@ type ReservationDelegate = {
   findUnique(args: {
     where: { id: string };
   }): Promise<PrismaReservationRecord | null>;
-  upsert(args: {
+  create(args: {
+    data: PrismaReservationRecord;
+  }): Promise<PrismaReservationRecord>;
+  update(args: {
     where: { id: string };
-    create: PrismaReservationRecord;
-    update: Omit<PrismaReservationRecord, "id" | "createdAt"> & {
+    data: Omit<PrismaReservationRecord, "id" | "createdAt"> & {
       updatedAt: Date;
     };
   }): Promise<PrismaReservationRecord>;
+};
+
+type UpdateReservationData = {
+  guestId: string;
+  roomId: string;
+  checkIn: Date;
+  checkOut: Date;
+  status: PrismaReservationRecord["status"];
+  updatedAt: Date;
 };
 
 export class PrismaReservationRepository implements IReservationRepository {
@@ -36,18 +47,29 @@ export class PrismaReservationRepository implements IReservationRepository {
 
   async save(reservation: Reservation): Promise<void> {
     const record = ReservationPrismaMapper.toPersistence(reservation);
-
-    await this.reservationDelegate.upsert({
+    const existingRecord = await this.reservationDelegate.findUnique({
       where: { id: record.id },
-      create: record,
-      update: {
-        guestId: record.guestId,
-        roomId: record.roomId,
-        checkIn: record.checkIn,
-        checkOut: record.checkOut,
-        status: record.status,
-        updatedAt: record.updatedAt,
-      },
+    });
+
+    if (!existingRecord) {
+      await this.reservationDelegate.create({
+        data: record,
+      });
+      return;
+    }
+
+    const updateData: UpdateReservationData = {
+      guestId: record.guestId,
+      roomId: record.roomId,
+      checkIn: record.checkIn,
+      checkOut: record.checkOut,
+      status: record.status,
+      updatedAt: record.updatedAt,
+    };
+
+    await this.reservationDelegate.update({
+      where: { id: record.id },
+      data: updateData,
     });
   }
 

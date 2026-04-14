@@ -13,6 +13,17 @@ type CreateReservationProps = {
   checkOut: Date | string;
 };
 
+type RehydrateReservationProps = {
+  id: string;
+  guestId: string;
+  roomId: string;
+  checkIn: Date | string;
+  checkOut: Date | string;
+  status: ReservationStatus;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+};
+
 export class Reservation {
   private readonly _id: string;
   private readonly _guestId: string;
@@ -30,6 +41,7 @@ export class Reservation {
     stayPeriod: StayPeriod,
     status: ReservationStatus,
     createdAt: Date,
+    updatedAt: Date,
   ) {
     this._id = id;
     this._guestId = guestId;
@@ -37,7 +49,7 @@ export class Reservation {
     this._stayPeriod = stayPeriod;
     this._status = status;
     this._createdAt = createdAt;
-    this._updatedAt = new Date(createdAt.getTime());
+    this._updatedAt = updatedAt;
   }
 
   static create(props: CreateReservationProps): Reservation {
@@ -53,6 +65,7 @@ export class Reservation {
       stayPeriod,
       "PENDING",
       new Date(),
+      new Date(),
     );
 
     reservation.recordEvent(
@@ -60,6 +73,30 @@ export class Reservation {
     );
 
     return reservation;
+  }
+
+  static rehydrate(props: RehydrateReservationProps): Reservation {
+    if (!props.id || !props.guestId || !props.roomId) {
+      throw new Error("Reservation id, guestId, and roomId are required.");
+    }
+
+    const createdAt = new Date(props.createdAt);
+    const updatedAt = new Date(props.updatedAt);
+
+    if (Number.isNaN(createdAt.getTime()) || Number.isNaN(updatedAt.getTime())) {
+      throw new Error("Reservation timestamps must be valid.");
+    }
+
+    const stayPeriod = StayPeriod.create(props.checkIn, props.checkOut);
+    return new Reservation(
+      props.id,
+      props.guestId,
+      props.roomId,
+      stayPeriod,
+      props.status,
+      createdAt,
+      updatedAt,
+    );
   }
 
   confirm(): void {
